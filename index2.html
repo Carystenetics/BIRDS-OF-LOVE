@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Open Door</title>
+<meta name="description" content="An interactive bird cage, and a poem about choosing to stay.">
+<meta name="theme-color" content="#3a2946">
+<meta property="og:title" content="The Open Door">
+<meta property="og:description" content="An interactive bird cage, and a poem about choosing to stay.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400;500&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink:#3a2e22;
+  --cream:#fbf3e6;
+  --gold:#c9862f;
+  --gold-soft:#e6a94f;
+  --line:rgba(58,46,34,0.18);
+  --bar:#2a1d12;
+  --serif:'Playfair Display',serif;
+  --read:'Cormorant Garamond',serif;
+  --mono:'Jost',sans-serif;
+  --hand:'Caveat',cursive;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+html{ scroll-behavior:smooth; scroll-padding-top:env(safe-area-inset-top,0px); }
+body{
+  background:linear-gradient(180deg,#3a2946 0%,#5c3f4a 38%,#caa06a 72%,#f3d9ab 100%);
+  color:var(--ink);
+  font-family:var(--mono);
+  overflow-x:hidden;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior:auto; }
+  *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+}
+
+canvas#drift{ position:fixed; inset:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+
+main{ position:relative; z-index:2; }
+
+/* ===================== HERO / CAGE ===================== */
+.hero{
+  min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:10vh 6vw;
+}
+.hero-kicker{ font-size:0.66rem; letter-spacing:0.5em; text-transform:uppercase; color:#fff6e6; opacity:0.85; margin-bottom:1.2rem; }
+.hero-title{
+  font-family:var(--serif); font-style:italic; font-weight:600; color:#fffaf0;
+  font-size:clamp(2rem,6vw,3.4rem); margin-bottom:1rem; text-shadow:0 2px 30px rgba(0,0,0,0.25);
+}
+.hero-sub{
+  font-family:var(--read); font-style:italic; font-size:clamp(1rem,2.1vw,1.15rem);
+  color:rgba(58,38,30,0.75); max-width:36ch; line-height:1.8; margin-bottom:5vh;
+}
+
+.cage-wrap{ position:relative; width:min(320px,72vw); cursor:pointer; }
+.cage-wrap svg{ width:100%; height:auto; overflow:visible; }
+.cage-hint{
+  margin-top:2.4vh; font-size:0.62rem; letter-spacing:0.32em; text-transform:uppercase;
+  color:rgba(58,38,30,0.6); opacity:1; transition:opacity 0.6s ease;
+}
+.cage-wrap.opened .cage-hint{ opacity:0; }
+
+.door{ transform-origin:86px 60px; transition:transform 1.4s cubic-bezier(.22,.9,.32,1.2); }
+.cage-wrap.opened .door{ transform:rotate(-108deg); }
+
+.bird-inside{ transition:opacity 0.6s ease 0.5s; }
+.cage-wrap.opened .bird-inside{ opacity:0; }
+
+.bird-free{
+  position:absolute; left:50%; top:56%; width:34px; height:auto;
+  opacity:0; pointer-events:none;
+}
+.cage-wrap.opened .bird-free{ animation:flyOut 3.4s cubic-bezier(.22,.7,.3,1) forwards; animation-delay:0.55s; }
+@keyframes flyOut{
+  0%{ opacity:0; transform:translate(-50%,-50%) scale(0.5) rotate(0deg); }
+  10%{ opacity:1; transform:translate(-50%,-60%) scale(0.7) rotate(-6deg); }
+  100%{ opacity:0; transform:translate(60vw,-70vh) scale(1.3) rotate(10deg); }
+}
+
+.reveal-line{
+  margin-top:4vh; font-family:var(--hand); font-size:clamp(1.3rem,3vw,1.7rem); color:#5a3d22;
+  opacity:0; transition:opacity 1.3s ease;
+}
+.reveal-line.show{ opacity:1; }
+
+.scroll-cue{
+  margin-top:5vh; font-size:0.58rem; letter-spacing:0.4em; text-transform:uppercase;
+  color:rgba(58,38,30,0.5);
+}
+
+/* ===================== VERSES ===================== */
+.verse{
+  position:relative; min-height:70vh; display:flex; align-items:center; justify-content:center;
+  text-align:center; padding:10vh 6vw;
+}
+.poem-card{
+  max-width:560px; opacity:0; transform:translateY(24px);
+  transition:opacity 1.1s ease, transform 1.1s ease, background 0.4s ease;
+  background:rgba(255,250,240,0.55);
+  -webkit-backdrop-filter:blur(10px) saturate(115%);
+  backdrop-filter:blur(10px) saturate(115%);
+  border:1px solid rgba(90,61,34,0.18);
+  border-radius:22px;
+  padding:2.4rem 2.6rem;
+  box-shadow:0 20px 50px -20px rgba(40,20,10,0.35);
+}
+.poem-card.visible{ opacity:1; transform:translateY(0); }
+.poem-card p{
+  font-family:var(--read); font-style:italic; font-size:clamp(1.1rem,2.4vw,1.5rem);
+  line-height:1.9; color:#3a2618; text-shadow:0 1px 0 rgba(255,255,255,0.15);
+}
+.poem-card p + p{ margin-top:0.85rem; }
+.pline{ display:inline-block; opacity:0; filter:blur(4px); transform:translateY(10px); transition:opacity 0.9s ease, transform 0.9s ease, filter 0.9s ease; }
+.pline.show{ opacity:1; filter:blur(0); transform:translateY(0); }
+
+/* ===================== FINAL + VOICE PLAYER ===================== */
+.final{
+  min-height:70vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:8vh 6vw 12vh;
+}
+.final-vow{
+  font-family:var(--hand); font-size:clamp(1.5rem,3.6vw,2rem); color:#4a2f1a; margin-bottom:5vh;
+  opacity:0; transition:opacity 1.4s ease;
+}
+.final-vow.show{ opacity:1; }
+
+.voice-player{
+  display:flex; align-items:center; gap:1rem; background:rgba(255,250,240,0.55);
+  border:1px solid rgba(90,61,34,0.25); border-radius:999px; padding:0.8rem 1.4rem 0.8rem 0.8rem;
+  backdrop-filter:blur(6px); opacity:0; transform:translateY(14px);
+  transition:opacity 1.2s ease, transform 1.2s ease;
+}
+.voice-player.show{ opacity:1; transform:translateY(0); }
+.voice-btn{
+  width:46px; height:46px; border-radius:50%; border:none; background:var(--bar); color:#fbf3e6;
+  font-size:1rem; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  transition:transform 0.2s ease, box-shadow 0.3s ease;
+}
+.voice-btn:hover{ box-shadow:0 0 16px rgba(230,169,79,0.5); transform:scale(1.05); }
+.voice-meta{ text-align:left; }
+.voice-label{ font-size:0.6rem; letter-spacing:0.24em; text-transform:uppercase; color:rgba(58,38,30,0.6); }
+.voice-title{ font-family:var(--serif); font-style:italic; font-size:1rem; color:#3a2618; margin-top:0.1rem; }
+.voice-bars{ display:flex; align-items:flex-end; gap:2px; height:22px; margin-left:0.6rem; }
+.voice-bars span{ width:3px; background:var(--gold); border-radius:2px; height:4px; transition:height 0.09s ease; }
+.voice-note{ margin-top:1.6rem; font-size:0.68rem; color:rgba(58,38,30,0.5); max-width:34ch; line-height:1.6; }
+
+.page-nav{ margin-top:5vh; }
+.page-nav-btn{
+  display:inline-flex; align-items:center; gap:0.55rem;
+  font-family:var(--mono); font-size:0.66rem; letter-spacing:0.22em; text-transform:uppercase;
+  color:#fbf3e6; background:var(--bar); border:1px solid rgba(230,169,79,0.4);
+  border-radius:999px; padding:0.85rem 1.8rem; text-decoration:none;
+  opacity:0; transform:translateY(14px);
+  transition:opacity 1.3s ease, transform 1.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.page-nav-btn.show{ opacity:0.95; transform:translateY(0); }
+.page-nav-btn:hover{ box-shadow:0 0 18px rgba(230,169,79,0.5); border-color:var(--gold-soft); }
+
+@media (max-width:560px){
+  .hero{ padding:8vh 7vw; }
+  .verse{ padding:8vh 7vw; }
+  .poem-card{ padding:1.9rem 1.6rem; border-radius:18px; }
+}
+</style>
+</head>
+<body>
+<noscript>
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:3rem;text-align:center;font-family:Georgia,serif;background:#5c3f4a;color:#fbf3e6;">
+    <p style="max-width:44ch;line-height:1.8;font-style:italic;">This poem needs JavaScript to open its cage &mdash; please enable it to see "The Open Door."</p>
+  </div>
+</noscript>
+<canvas id="drift" aria-hidden="true"></canvas>
+
+<main>
+
+  <section class="hero">
+    <p class="hero-kicker">a small interactive poem</p>
+    <h1 class="hero-title">The Open Door</h1>
+    <p class="hero-sub">Every cage has a door. Most of them, if you look closely, were never really locked.</p>
+
+    <div class="cage-wrap" id="cageWrap" role="button" tabindex="0" aria-label="Open the cage door">
+      <svg viewBox="0 0 220 200">
+        <!-- stand -->
+        <line x1="110" y1="170" x2="110" y2="196" stroke="#2a1d12" stroke-width="4" stroke-linecap="round"/>
+        <ellipse cx="110" cy="198" rx="30" ry="5" fill="#2a1d12" opacity="0.25"/>
+        <!-- dome -->
+        <path d="M20,80 C20,30 200,30 200,80" fill="none" stroke="#2a1d12" stroke-width="3.4" stroke-linecap="round"/>
+        <line x1="110" y1="20" x2="110" y2="34" stroke="#2a1d12" stroke-width="3"/>
+        <circle cx="110" cy="16" r="5" fill="#2a1d12"/>
+        <!-- vertical bars (back, static) -->
+        <g stroke="#2a1d12" stroke-width="2.6" stroke-linecap="round">
+          <line x1="30" y1="76" x2="30" y2="168"/>
+          <line x1="48" y1="66" x2="48" y2="168"/>
+          <line x1="172" y1="66" x2="172" y2="168"/>
+          <line x1="190" y1="76" x2="190" y2="168"/>
+          <line x1="150" y1="55" x2="150" y2="168"/>
+          <line x1="70" y1="55" x2="70" y2="168"/>
+        </g>
+        <!-- base -->
+        <rect x="24" y="164" width="172" height="10" rx="4" fill="#2a1d12"/>
+        <rect x="34" y="150" width="152" height="8" rx="3" fill="#3a2818" opacity="0.6"/>
+        <!-- perch -->
+        <line x1="72" y1="120" x2="148" y2="120" stroke="#5a3d22" stroke-width="4" stroke-linecap="round"/>
+
+        <!-- bird sitting inside -->
+        <g class="bird-inside" transform="translate(110,108)">
+          <ellipse rx="16" ry="12" fill="#c9862f"/>
+          <circle cx="10" cy="-7" r="7" fill="#c9862f"/>
+          <path d="M17,-7 l6,-2.4 l0,5 z" fill="#5a3d22"/>
+          <circle cx="12" cy="-9" r="1.4" fill="#2a1d12"/>
+          <path d="M-16,2 q-8,4 -14,0" stroke="#a5701f" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- door: hinged group swings open via CSS -->
+        <g class="door" transform="translate(0,0)">
+          <line x1="86" y1="60" x2="86" y2="168" stroke="#c9862f" stroke-width="3" stroke-linecap="round"/>
+          <line x1="108" y1="58" x2="108" y2="168" stroke="#c9862f" stroke-width="3" stroke-linecap="round"/>
+          <line x1="86" y1="60" x2="108" y2="58" stroke="#c9862f" stroke-width="3" stroke-linecap="round"/>
+        </g>
+      </svg>
+
+      <!-- bird that flies free once the door opens -->
+      <svg class="bird-free" viewBox="0 0 40 30">
+        <ellipse cx="18" cy="16" rx="16" ry="11" fill="#c9862f"/>
+        <circle cx="30" cy="8" r="6.5" fill="#c9862f"/>
+        <path d="M36,7 l6,-2.5 l0,5.4 z" fill="#5a3d22"/>
+        <path d="M2,18 q-10,5 -16,-2" stroke="#a5701f" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <p class="cage-hint" id="cageHint">tap the cage to open it</p>
+    <p class="reveal-line" id="revealLine">The door was always open.</p>
+    <div class="scroll-cue">scroll down</div>
+  </section>
+
+  <section class="verse">
+    <div class="poem-card">
+      <p><span class="pline">I could have built you a cage &mdash;</span></p>
+      <p><span class="pline">gold bars, a soft perch,</span><br><span class="pline">every reason to stay</span><br><span class="pline">disguised as safety.</span></p>
+    </div>
+  </section>
+
+  <section class="verse">
+    <div class="poem-card">
+      <p><span class="pline">Instead, I left the door unlocked.</span></p>
+      <p><span class="pline">Terrified, every single day,</span><br><span class="pline">that you'd notice, and go.</span></p>
+    </div>
+  </section>
+
+  <section class="verse">
+    <div class="poem-card">
+      <p><span class="pline">You noticed on the first day.</span></p>
+      <p><span class="pline">You've stayed every day since.</span></p>
+    </div>
+  </section>
+
+  <section class="verse">
+    <div class="poem-card">
+      <p><span class="pline">That's not captivity.</span></p>
+      <p><span class="pline">That's not even loyalty.</span></p>
+      <p><span class="pline">That's just&hellip; choosing me,</span><br><span class="pline">with every door left open.</span></p>
+    </div>
+  </section>
+
+  <section class="final" id="finalSection">
+    <p class="final-vow" id="finalVow">The cage was never the point. The staying was.</p>
+
+    <!-- =====================================================================
+         🎙️  PUT YOUR VOICE RECORDING HERE
+
+         1. Name your audio file "voice-recording.mp3" (mp3, m4a, or wav all work —
+            if you use a different format or name, just update the src="" path below
+            to match).
+         2. Place that audio file in the SAME FOLDER as this HTML file (index2.html).
+         3. That's it — the player below will pick it up automatically.
+
+         If you'd rather keep it in a subfolder, e.g. "audio/voice-recording.mp3",
+         change the src attribute to that relative path instead.
+       ===================================================================== -->
+    <audio id="voiceAudio" src="voice-recording.m4a" preload="auto"></audio>
+
+    <div class="voice-player" id="voicePlayer">
+      <button class="voice-btn" id="voiceBtn" aria-label="Play voice recording" aria-pressed="false">&#9658;</button>
+      <div class="voice-meta">
+        <div class="voice-label">a voice, kept</div>
+        <div class="voice-title">Play</div>
+      </div>
+      <div class="voice-bars" id="voiceBars" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+    <p class="voice-note" id="voiceNote"></p>
+
+    <div class="page-nav">
+      <a class="page-nav-btn" id="firstPageBtn" href="index.html" target="_blank" rel="noopener noreferrer">&larr; back to the first page</a>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function(){
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- ambient drifting feathers/dust ---------- */
+  const canvas = document.getElementById('drift');
+  const ctx = canvas.getContext('2d');
+  let w,h,dpr;
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio||1,2);
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w*dpr; canvas.height = h*dpr;
+    canvas.style.width = w+'px'; canvas.style.height = h+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  let motes = [];
+  function buildMotes(){
+    motes = [];
+    const count = w < 700 ? 16 : 26;
+    for(let i=0;i<count;i++){
+      motes.push({ x:Math.random()*w, y:Math.random()*h, r:0.6+Math.random()*1.4, vy:0.08+Math.random()*0.12, sway:Math.random()*Math.PI*2, speed:0.2+Math.random()*0.3 });
+    }
+  }
+  window.addEventListener('resize', ()=>{ resize(); buildMotes(); });
+  resize(); buildMotes();
+  let time=0;
+  function draw(){
+    time += 0.016;
+    ctx.clearRect(0,0,w,h);
+    motes.forEach(m=>{
+      m.y -= m.vy;
+      m.x += Math.sin(time*m.speed+m.sway)*0.2;
+      if(m.y < -10){ m.y = h+10; m.x = Math.random()*w; }
+      ctx.fillStyle = 'rgba(255,246,225,0.5)';
+      ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,Math.PI*2); ctx.fill();
+    });
+    if(!reduceMotion) requestAnimationFrame(draw);
+  }
+  if(!reduceMotion) requestAnimationFrame(draw); else draw();
+
+  /* ---------- the cage ---------- */
+  const cageWrap = document.getElementById('cageWrap');
+  const cageHint = document.getElementById('cageHint');
+  const revealLine = document.getElementById('revealLine');
+  let opened = false;
+
+  function openCage(){
+    if(opened) return;
+    opened = true;
+    cageWrap.classList.add('opened');
+    setTimeout(()=> revealLine.classList.add('show'), 1400);
+    if(typeof playDoorCreak === 'function') playDoorCreak();
+    setTimeout(()=>{ if(typeof playWingFlutter === 'function') playWingFlutter(); }, 500);
+  }
+  cageWrap.addEventListener('click', openCage);
+  cageWrap.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openCage(); }
+  });
+
+  /* ---------- poem reveal ---------- */
+  const cards = document.querySelectorAll('.poem-card');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('visible');
+        entry.target.querySelectorAll('.pline').forEach((line,i)=>{
+          setTimeout(()=> line.classList.add('show'), reduceMotion?0:i*150);
+        });
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold:0.3 });
+  cards.forEach(c=> io.observe(c));
+
+  const finalVow = document.getElementById('finalVow');
+  const voicePlayer = document.getElementById('voicePlayer');
+  const firstPageBtn = document.getElementById('firstPageBtn');
+  const fio = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        finalVow.classList.add('show');
+        setTimeout(()=> voicePlayer.classList.add('show'), 600);
+        setTimeout(()=> firstPageBtn.classList.add('show'), 1000);
+        fio.unobserve(entry.target);
+      }
+    });
+  }, { threshold:0.4 });
+  fio.observe(document.getElementById('finalSection'));
+
+  /* ---------- voice recording player ---------- */
+  const voiceAudio = document.getElementById('voiceAudio');
+  const voiceBtn = document.getElementById('voiceBtn');
+  const voiceNote = document.getElementById('voiceNote');
+  const barsEl = document.getElementById('voiceBars');
+  const bars = Array.from(barsEl.querySelectorAll('span'));
+  let audioCtx = null, analyser = null, sourceNode = null, dataArray = null;
+  let rafId = null;
+
+  function setupAnalyser(){
+    if(audioCtx) return;
+    try{
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      sourceNode = audioCtx.createMediaElementSource(voiceAudio);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+      sourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    }catch(e){ /* analyser is a nice-to-have; playback still works without it */ }
+  }
+
+  function animateBars(){
+    if(analyser){
+      analyser.getByteFrequencyData(dataArray);
+      bars.forEach((bar,i)=>{
+        const v = dataArray[i*2] || 0;
+        bar.style.height = Math.max(4, (v/255)*22) + 'px';
+      });
+    } else {
+      bars.forEach((bar,i)=>{
+        bar.style.height = (4 + Math.abs(Math.sin(performance.now()/300 + i))*14) + 'px';
+      });
+    }
+    rafId = requestAnimationFrame(animateBars);
+  }
+  function stopBars(){
+    cancelAnimationFrame(rafId);
+    bars.forEach(bar=> bar.style.height = '4px');
+  }
+
+  voiceBtn.addEventListener('click', ()=>{
+    setupAnalyser();
+    if(voiceAudio.paused){
+      voiceAudio.play().then(()=>{
+        voiceBtn.innerHTML = '&#10074;&#10074;';
+        voiceBtn.setAttribute('aria-pressed','true');
+        voiceNote.style.opacity = '0';
+        animateBars();
+      }).catch(()=>{
+        voiceNote.textContent = 'Add "voice-recording.mp3" next to this HTML file to hear it here.';
+        voiceNote.style.opacity = '1';
+      });
+    } else {
+      voiceAudio.pause();
+      voiceBtn.innerHTML = '&#9658;';
+      voiceBtn.setAttribute('aria-pressed','false');
+      stopBars();
+    }
+  });
+  voiceAudio.addEventListener('ended', ()=>{
+    voiceBtn.innerHTML = '&#9658;';
+    voiceBtn.setAttribute('aria-pressed','false');
+    stopBars();
+  });
+
+})();
+</script>
+
+</body>
+</html>

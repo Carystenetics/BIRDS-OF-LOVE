@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Way Birds Love</title>
+<meta name="description" content="A scrolling poem about love, told through birds.">
+<meta name="theme-color" content="#2b2140">
+<meta property="og:title" content="The Way Birds Love">
+<meta property="og:description" content="A scrolling poem about love, told through birds.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@200;300;400;500&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink:#3a2e22;
+  --cream:#fbf3e6;
+  --gold:#c9862f;
+  --gold-soft:#e6a94f;
+  --line:rgba(58,46,34,0.18);
+  --serif:'Playfair Display',serif;
+  --read:'Cormorant Garamond',serif;
+  --mono:'Jost',sans-serif;
+  --hand:'Caveat',cursive;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+html{ scroll-behavior:smooth; scroll-padding-top:env(safe-area-inset-top,0px); }
+body{
+  background:#2b2140;
+  color:var(--cream);
+  font-family:var(--mono);
+  overflow-x:hidden;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior:auto; }
+  *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+}
+
+canvas#scene{ position:fixed; inset:0; width:100%; height:100%; z-index:0; }
+#vignette{
+  position:fixed; inset:0; z-index:1; pointer-events:none;
+  background:radial-gradient(ellipse 95% 85% at 50% 46%, transparent 45%, rgba(10,6,4,0.38) 100%);
+}
+
+#soundToggle{
+  position:fixed; right:1.3rem; bottom:calc(1.3rem + env(safe-area-inset-bottom, 0px)); z-index:20; width:42px; height:42px; border-radius:50%;
+  border:1px solid rgba(251,243,230,0.3); background:rgba(20,14,24,0.4); color:var(--cream);
+  font-size:1.05rem; cursor:pointer; backdrop-filter:blur(6px);
+  transition:border-color 0.3s ease, box-shadow 0.3s ease;
+}
+#soundToggle:hover{ border-color:var(--gold-soft); box-shadow:0 0 18px rgba(230,169,79,0.4); }
+
+#progressBar{
+  position:fixed; top:env(safe-area-inset-top, 0px); left:0; height:3px; width:0%; z-index:25;
+  background:linear-gradient(90deg, var(--gold-soft), var(--gold));
+  box-shadow:0 0 12px rgba(230,169,79,0.6);
+  transition:width 0.12s linear;
+}
+
+.sky-message{
+  position:fixed; z-index:15; left:0; top:0; pointer-events:none; text-align:center;
+  font-family:var(--read); font-style:italic; color:var(--gold-soft);
+  font-size:clamp(1rem,2.5vw,1.25rem); max-width:min(70vw,300px);
+  text-shadow:0 2px 16px rgba(0,0,0,0.55);
+  transform:translate(-50%,-100%) scale(0.7); opacity:0;
+  animation:skyMsg 2.6s ease forwards;
+}
+@keyframes skyMsg{
+  0%{ opacity:0; transform:translate(-50%,-90%) scale(0.6); }
+  16%{ opacity:1; transform:translate(-50%,-135%) scale(1.05); }
+  76%{ opacity:1; transform:translate(-50%,-158%) scale(1); }
+  100%{ opacity:0; transform:translate(-50%,-180%) scale(0.95); }
+}
+
+main{ position:relative; z-index:2; }
+
+/* ===================== HERO ===================== */
+.hero{
+  min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:12vh 6vw; position:relative;
+}
+.branch{ width:min(320px,70vw); height:auto; opacity:0; transform:translateY(-16px); animation:branchIn 1.6s ease forwards; animation-delay:0.2s; margin-bottom:2vh; }
+@keyframes branchIn{ to{ opacity:0.92; transform:translateY(0); } }
+.hero-kicker{ font-size:0.66rem; letter-spacing:0.5em; text-transform:uppercase; color:var(--gold-soft); opacity:0; margin-bottom:1.4rem; animation:fadeUp 1.2s ease forwards; animation-delay:0.6s; }
+.hero-title{
+  font-family:var(--serif); font-style:italic; font-weight:600; color:var(--cream);
+  font-size:clamp(2.1rem,6.5vw,3.8rem); line-height:1.2; opacity:0;
+  text-shadow:0 0 50px rgba(230,169,79,0.25);
+  animation:fadeUp 1.4s ease forwards; animation-delay:0.85s;
+}
+.hero-sub{
+  margin-top:1.6rem; font-family:var(--read); font-style:italic; font-size:clamp(1rem,2.2vw,1.2rem);
+  color:rgba(251,243,230,0.82); max-width:38ch; line-height:1.85; opacity:0;
+  animation:fadeUp 1.3s ease forwards; animation-delay:1.15s;
+}
+@keyframes fadeUp{ from{ opacity:0; transform:translateY(16px);} to{ opacity:1; transform:translateY(0);} }
+.scroll-cue{
+  position:absolute; bottom:6vh; left:50%; transform:translateX(-50%);
+  font-size:0.58rem; letter-spacing:0.4em; text-transform:uppercase; color:rgba(251,243,230,0.55);
+  opacity:0; animation:fadeUp 1.2s ease forwards; animation-delay:1.6s;
+}
+
+/* ===================== VERSES ===================== */
+.verse{
+  position:relative; min-height:100vh; display:flex; align-items:center; justify-content:center;
+  text-align:center; padding:14vh 6vw;
+}
+.verse::before{
+  content:''; position:absolute; left:0; top:16%; bottom:16%; width:3px;
+  background:var(--accent, var(--gold-soft)); opacity:0.45; border-radius:2px;
+}
+.eyebrow{
+  display:block; font-size:0.66rem; letter-spacing:0.42em; text-transform:uppercase; color:var(--gold-soft);
+  margin-bottom:3vh; opacity:0.9;
+}
+.eyebrow::before, .eyebrow::after{
+  content:''; display:inline-block; width:22px; height:1px; background:var(--gold-soft);
+  vertical-align:middle; opacity:0.65; margin:0 0.8em;
+}
+.poem-card{
+  max-width:600px; opacity:0; transform:translateY(26px);
+  transition:opacity 1.1s ease, transform 1.1s ease, filter 0.5s ease, background 0.4s ease;
+  background:rgba(20,14,24,0.4);
+  -webkit-backdrop-filter:blur(14px) saturate(115%);
+  backdrop-filter:blur(14px) saturate(115%);
+  border:1px solid rgba(251,243,230,0.14);
+  border-radius:22px;
+  padding:2.8rem 3rem;
+  box-shadow:0 25px 60px -20px rgba(0,0,0,0.5);
+}
+.poem-card.visible{ opacity:1; transform:translateY(0); }
+.poem-card:hover{ filter:brightness(1.08) drop-shadow(0 0 22px rgba(230,169,79,0.28)); background:rgba(20,14,24,0.5); }
+.poem-card p{
+  font-family:var(--read); font-style:italic; font-size:clamp(1.15rem,2.5vw,1.55rem);
+  line-height:1.95; color:var(--cream); text-shadow:0 3px 22px rgba(0,0,0,0.4);
+}
+.poem-card p + p{ margin-top:0.9rem; }
+.pline{ display:inline-block; opacity:0; filter:blur(5px); transform:translateY(10px); transition:opacity 0.9s ease, transform 0.9s ease, filter 0.9s ease; }
+.pline.show{ opacity:1; filter:blur(0); transform:translateY(0); }
+
+/* ===================== FINAL ===================== */
+.final{ padding-bottom:6vh; }
+.final .branch{ transform:scaleY(-1) translateY(-16px); margin-top:5vh; margin-bottom:0; }
+.final .branch.show{ transform:scaleY(-1) translateY(0); opacity:0.92; }
+.final-vow{
+  margin-top:3.4vh; font-family:var(--hand); font-size:clamp(1.35rem,3.2vw,1.8rem); color:var(--gold-soft);
+  opacity:0; transition:opacity 1.5s ease; position:relative;
+}
+.final-vow.show{ opacity:1; animation:vowGlow 3.4s ease-in-out infinite; }
+@keyframes vowGlow{
+  0%,100%{ text-shadow:0 0 18px rgba(230,169,79,0.25); }
+  50%{ text-shadow:0 0 34px rgba(230,169,79,0.55); }
+}
+.back-top{
+  display:inline-flex; align-items:center; gap:0.55rem; margin-top:4vh;
+  font-size:0.66rem; letter-spacing:0.24em; text-transform:uppercase;
+  color:var(--cream); text-decoration:none;
+  background:rgba(20,14,24,0.5); border:1px solid rgba(230,169,79,0.4);
+  border-radius:999px; padding:0.9rem 1.9rem;
+  opacity:0; transform:translateY(14px);
+  transition:opacity 1.4s ease, transform 1.4s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.back-top.show{ opacity:0.95; transform:translateY(0); }
+.back-top:hover{ border-color:var(--gold-soft); box-shadow:0 0 18px rgba(230,169,79,0.5); }
+
+@media (max-width:560px){
+  .verse{ padding:10vh 7vw; }
+  .hero{ padding:9vh 7vw; }
+  .poem-card{ padding:2rem 1.6rem; border-radius:18px; }
+}
+</style>
+</head>
+<body>
+<noscript>
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:3rem;text-align:center;font-family:Georgia,serif;background:#2b2140;color:#fbf3e6;">
+    <p style="max-width:44ch;line-height:1.8;font-style:italic;">This poem needs JavaScript to take flight &mdash; please enable it to see "The Way Birds Love."</p>
+  </div>
+</noscript>
+<canvas id="scene"></canvas>
+<div id="vignette" aria-hidden="true"></div>
+<div id="progressBar" aria-hidden="true"></div>
+<button id="soundToggle" aria-pressed="false" aria-label="Toggle ambience">&#128264;</button>
+
+<main>
+
+  <section class="hero">
+    <svg class="branch" viewBox="0 0 300 80" aria-hidden="true">
+      <path d="M0,42 C60,14 120,58 180,22 C220,2 260,30 300,12" stroke="#241a10" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+      <path d="M60,28 q10,-14 18,-4" stroke="#241a10" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M150,32 q8,-13 16,-3" stroke="#241a10" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <path d="M225,18 q8,-12 16,-3" stroke="#241a10" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <ellipse cx="150" cy="52" rx="34" ry="13" fill="#3b2a18"/>
+      <path d="M120,50 q30,10 60,0" stroke="#2a1d10" stroke-width="1.6" fill="none" opacity="0.6"/>
+      <path d="M122,45 q28,9 56,0" stroke="#2a1d10" stroke-width="1.6" fill="none" opacity="0.5"/>
+      <g transform="translate(138,44)"><ellipse rx="9" ry="6.5" fill="#5a3d22"/><circle cx="-6" cy="-3" r="4" fill="#5a3d22"/><path d="M-10,-3 l-4,-1.5 l0,3 z" fill="#c9862f"/></g>
+      <g transform="translate(160,45)"><ellipse rx="9" ry="6.5" fill="#4a3018"/><circle cx="6" cy="-3" r="4" fill="#4a3018"/><path d="M10,-3 l4,-1.5 l0,3 z" fill="#c9862f"/></g>
+    </svg>
+    <p class="hero-kicker">a poem about love, told by birds</p>
+    <h1 class="hero-title">The Way Birds Love</h1>
+    <p class="hero-sub">Some things about love make more sense mid-flight &mdash; the nest built one twig at a time, the storms flown through together, the way home that's never really lost.</p>
+    <div class="scroll-cue">scroll to begin</div>
+  </section>
+
+  <section class="verse" id="v1" style="--accent:#e6a94f;">
+    <div>
+      <span class="eyebrow">I. The Nest</span>
+      <div class="poem-card">
+        <p><span class="pline">Some birds spend a whole spring</span><br><span class="pline">weaving a single nest from nothing</span></p>
+        <p><span class="pline">a twig at a time, a promise at a time,</span><br><span class="pline">until it finally holds.</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="verse" id="v2" style="--accent:#8fd0e6;">
+    <div>
+      <span class="eyebrow">II. The First Flight</span>
+      <div class="poem-card">
+        <p><span class="pline">Falling in love, someone once said,</span><br><span class="pline">feels a lot like falling &mdash;</span></p>
+        <p><span class="pline">until you notice neither of us</span><br><span class="pline">ever hit the ground.</span></p>
+        <p><span class="pline">We just&hellip; flew.</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="verse" id="v3" style="--accent:#9aa7b0;">
+    <div>
+      <span class="eyebrow">III. The Storm</span>
+      <div class="poem-card">
+        <p><span class="pline">Even birds get caught</span><br><span class="pline">in storms they didn't see coming.</span></p>
+        <p><span class="pline">They don't leave the sky because of it.</span></p>
+        <p><span class="pline">They just fly closer together.</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="verse" id="v4" style="--accent:#ff8c69;">
+    <div>
+      <span class="eyebrow">IV. Migration</span>
+      <div class="poem-card">
+        <p><span class="pline">Some birds travel thousands of miles</span><br><span class="pline">and somehow still find their way back</span><br><span class="pline">to the exact same branch.</span></p>
+        <p><span class="pline">I don't know how they do it.</span></p>
+        <p><span class="pline">I only know I'd find my way back to you.</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="verse" id="v5" style="--accent:#ffd9a0;">
+    <div>
+      <span class="eyebrow">V. The Dawn Chorus</span>
+      <div class="poem-card">
+        <p><span class="pline">Every morning, before the world is fully awake,</span><br><span class="pline">the birds start singing anyway &mdash;</span></p>
+        <p><span class="pline">not because anyone's listening,</span><br><span class="pline">but because the sun came up,</span><br><span class="pline">and that alone is worth singing about.</span></p>
+        <p><span class="pline">I choose you the same way.</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="verse final" id="v6" style="--accent:#e6a94f;">
+    <div>
+      <span class="eyebrow">VI. Coming Home</span>
+      <div class="poem-card">
+        <p><span class="pline">They say some birds mate for life &mdash;</span><br><span class="pline">not because they can't leave,</span><br><span class="pline">but because they keep choosing not to.</span></p>
+        <p><span class="pline">Every year, the same sky.</span><br><span class="pline">Every year, the same branch.</span><br><span class="pline">Every year, still you.</span></p>
+      </div>
+      <svg class="branch" id="finalBranch" viewBox="0 0 300 80" aria-hidden="true">
+        <path d="M0,42 C60,14 120,58 180,22 C220,2 260,30 300,12" stroke="#241a10" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+        <path d="M60,28 q10,-14 18,-4" stroke="#241a10" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M150,32 q8,-13 16,-3" stroke="#241a10" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M225,18 q8,-12 16,-3" stroke="#241a10" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <ellipse cx="150" cy="52" rx="34" ry="13" fill="#3b2a18"/>
+        <path d="M120,50 q30,10 60,0" stroke="#2a1d10" stroke-width="1.6" fill="none" opacity="0.6"/>
+        <path d="M122,45 q28,9 56,0" stroke="#2a1d10" stroke-width="1.6" fill="none" opacity="0.5"/>
+        <g transform="translate(138,44)"><ellipse rx="9" ry="6.5" fill="#5a3d22"/><circle cx="-6" cy="-3" r="4" fill="#5a3d22"/><path d="M-10,-3 l-4,-1.5 l0,3 z" fill="#c9862f"/></g>
+        <g transform="translate(160,45)"><ellipse rx="9" ry="6.5" fill="#4a3018"/><circle cx="6" cy="-3" r="4" fill="#4a3018"/><path d="M10,-3 l4,-1.5 l0,3 z" fill="#c9862f"/></g>
+      </svg>
+      <p class="final-vow" id="finalVow">Wherever I fly, I'm already flying home.</p>
+      <a class="back-top" id="backTop" href="index2.html" target="_blank" rel="noopener noreferrer">next page &rarr;</a>
+    </div>
+  </section>
+
+</main>
+
+<script>
+(function(){
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- click bursts ---------- */
+  function skyMessage(text, x, y){
+    const el = document.createElement('div');
+    el.className = 'sky-message';
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.setAttribute('aria-hidden', 'true');
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(()=> el.remove(), 2700);
+  }
+
+  /* ---------- canvas ---------- */
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  let w,h,dpr;
+  function resize(){
+    dpr = Math.min(window.devicePixelRatio||1, 2);
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w*dpr; canvas.height = h*dpr;
+    canvas.style.width = w+'px'; canvas.style.height = h+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function getScrollT(){
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    if(max <= 0) return 0;
+    return Math.max(0, Math.min(1, window.scrollY / max));
+  }
+
+  /* ---------- subtle mouse parallax ---------- */
+  let parX = 0, parY = 0, targetParX = 0, targetParY = 0;
+  if(window.matchMedia('(hover:hover)').matches && !reduceMotion){
+    window.addEventListener('mousemove', (e)=>{
+      targetParX = (e.clientX / window.innerWidth - 0.5) * 26;
+      targetParY = (e.clientY / window.innerHeight - 0.5) * 16;
+    });
+  }
+
+  /* ---------- sky ---------- */
+  const skyStops = [
+    { t:0.00, top:'#2b2140', horizon:'#ffb37a' },
+    { t:0.166, top:'#3d6f9c', horizon:'#ffe3b8' },
+    { t:0.333, top:'#4fa3d1', horizon:'#eaf6ff' },
+    { t:0.50,  top:'#1c1f2b', horizon:'#5a6b7a' },
+    { t:0.666, top:'#33204a', horizon:'#ff8c69' },
+    { t:0.833, top:'#345a7a', horizon:'#ffd9a0' },
+    { t:1.00,  top:'#2a1533', horizon:'#ffcf9c' }
+  ];
+  function hexToRgb(hex){ const n=parseInt(hex.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+  function lerpColor(a,b,f){
+    const c1=hexToRgb(a), c2=hexToRgb(b);
+    return `rgb(${Math.round(c1[0]+(c2[0]-c1[0])*f)},${Math.round(c1[1]+(c2[1]-c1[1])*f)},${Math.round(c1[2]+(c2[2]-c1[2])*f)})`;
+  }
+  function getSky(t){
+    let a=skyStops[0], b=skyStops[skyStops.length-1];
+    for(let i=0;i<skyStops.length-1;i++){ if(t>=skyStops[i].t && t<=skyStops[i+1].t){ a=skyStops[i]; b=skyStops[i+1]; break; } }
+    const span=(b.t-a.t)||1, f=Math.max(0,Math.min(1,(t-a.t)/span));
+    return { top:lerpColor(a.top,b.top,f), horizon:lerpColor(a.horizon,b.horizon,f) };
+  }
+  function stormFactor(t){ return Math.max(0, 1 - Math.abs(t-0.5)/0.12); }
+
+  /* ---------- birds ---------- */
+  let birds = [];
+  function buildBirds(){
+    birds = [];
+    const small = w < 700;
+    const layers = [
+      { n: small?2:4, y0:0.10, y1:0.24, scale:0.55, speed:0.35, alpha:0.35 },
+      { n: small?2:4, y0:0.18, y1:0.34, scale:0.85, speed:0.55, alpha:0.55 },
+      { n: small?3:4, y0:0.14, y1:0.30, scale:1.2,  speed:0.8,  alpha:0.8 }
+    ];
+    layers.forEach(layer=>{
+      for(let i=0;i<layer.n;i++){
+        birds.push({
+          x: Math.random()*w,
+          y: h*(layer.y0 + Math.random()*(layer.y1-layer.y0)),
+          scale: layer.scale + Math.random()*0.15,
+          speed: layer.speed * (0.85+Math.random()*0.3),
+          alpha: layer.alpha,
+          phase: Math.random()*Math.PI*2,
+          flap: 2.6 + Math.random()*0.8
+        });
+      }
+    });
+  }
+
+  function drawBird(x,y,scale,wingT,alpha,tilt){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(tilt);
+    ctx.scale(scale,scale);
+    ctx.strokeStyle = `rgba(28,20,16,${alpha})`;
+    ctx.lineWidth = 2.6;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-15,0);
+    ctx.quadraticCurveTo(-6,-13*wingT,0,0);
+    ctx.quadraticCurveTo(6,-13*wingT,15,0);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function updateAndDrawBirds(t, time){
+    const storm = stormFactor(t);
+    birds.forEach(b=>{
+      b.x += b.speed * (1 + storm*0.6);
+      if(b.x > w+30){ b.x = -30; b.y = h*(0.08+Math.random()*0.26); }
+      const jitter = storm * Math.sin(time*4 + b.phase) * 6;
+      const wingT = Math.sin(time*b.flap + b.phase);
+      const tilt = storm * 0.18 * Math.sin(time*2+b.phase);
+      drawBird(b.x, b.y+jitter, b.scale, wingT, b.alpha*(1-storm*0.15), tilt);
+    });
+  }
+
+  /* ---------- feathers ---------- */
+  let feathers = [];
+  const featherReasons = [
+    "the way you say my name first thing in the morning",
+    "how you always leave the porch light on",
+    "the songs you hum without noticing",
+    "that you still write things down for me",
+    "how safe your hands feel, every time"
+  ];
+  function buildFeathers(){
+    feathers = [];
+    const count = w < 700 ? 12 : 20;
+    for(let i=0;i<count;i++){
+      feathers.push({
+        x: Math.random()*w, y: Math.random()*h,
+        vy: 0.35+Math.random()*0.5, sway: Math.random()*Math.PI*2,
+        swaySpeed: 0.4+Math.random()*0.5, rot: Math.random()*Math.PI,
+        vr: (Math.random()-0.5)*0.01, size: 5+Math.random()*5,
+        text: Math.random()<0.35 ? featherReasons[Math.floor(Math.random()*featherReasons.length)] : null
+      });
+    }
+  }
+  function drawFeather(f,alpha){
+    ctx.save();
+    ctx.translate(f.x,f.y);
+    ctx.rotate(f.rot);
+    ctx.fillStyle = f.text ? `rgba(255,224,168,${alpha+0.12})` : `rgba(251,243,230,${alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(0,-f.size*1.6);
+    ctx.quadraticCurveTo(f.size*0.9,-f.size*0.2,0,f.size*1.6);
+    ctx.quadraticCurveTo(-f.size*0.9,-f.size*0.2,0,-f.size*1.6);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(230,169,79,${f.text ? alpha*0.9 : alpha*0.6})`;
+    ctx.lineWidth = f.text ? 0.9 : 0.6;
+    ctx.beginPath(); ctx.moveTo(0,-f.size*1.5); ctx.lineTo(0,f.size*1.5); ctx.stroke();
+    ctx.restore();
+  }
+  function updateAndDrawFeathers(t, time){
+    const storm = stormFactor(t);
+    feathers.forEach(f=>{
+      f.y += f.vy * (1+storm*1.4);
+      f.x += Math.sin(time*f.swaySpeed + f.sway) * (0.6+storm*1.2);
+      f.rot += f.vr * (1+storm*2);
+      if(f.y > h+20){ f.y = -20; f.x = Math.random()*w; }
+      drawFeather(f, 0.5);
+    });
+  }
+
+  function drawWindLines(storm, time){
+    if(storm <= 0.02) return;
+    ctx.strokeStyle = `rgba(230,235,240,${storm*0.22})`;
+    ctx.lineWidth = 1;
+    for(let i=0;i<14;i++){
+      const yBase = (i/14)*h + (time*80 % (h/14));
+      const y = yBase % h;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(60, y+22);
+      ctx.stroke();
+    }
+  }
+
+  function drawLightRays(dawnFactor, time){
+    if(dawnFactor <= 0.02) return;
+    ctx.save();
+    ctx.globalAlpha = dawnFactor * 0.5;
+    const cx = w*0.72, cy = h*0.1;
+    for(let i=0;i<5;i++){
+      const ang = -1.15 + i*0.32 + Math.sin(time*0.05+i)*0.02;
+      const len = h*1.1;
+      const grad = ctx.createLinearGradient(cx,cy, cx+Math.cos(ang)*len, cy+Math.sin(ang)*len);
+      grad.addColorStop(0,'rgba(255,230,180,0.35)');
+      grad.addColorStop(1,'rgba(255,230,180,0)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 26;
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.lineTo(cx+Math.cos(ang)*len, cy+Math.sin(ang)*len);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* ---------- main loop ---------- */
+  const progressBar = document.getElementById('progressBar');
+  let time = 0;
+  function draw(){
+    time += 0.016;
+    const t = getScrollT();
+    progressBar.style.width = (t*100)+'%';
+
+    const sky = getSky(t);
+    const bg = ctx.createLinearGradient(0,0,0,h);
+    bg.addColorStop(0, sky.top);
+    bg.addColorStop(1, sky.horizon);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,w,h);
+
+    const dawnFactor = Math.max(0, 1 - Math.abs(t-0.833)/0.09);
+    drawLightRays(dawnFactor, time);
+
+    parX += (targetParX-parX)*0.06;
+    parY += (targetParY-parY)*0.06;
+    ctx.save();
+    ctx.translate(parX, parY);
+    const storm = stormFactor(t);
+    updateAndDrawFeathers(t, time);
+    updateAndDrawBirds(t, time);
+    ctx.restore();
+    drawWindLines(storm, time);
+
+    window.__birds = birds;
+    window.__feathers = feathers;
+    window.__parallax = { x:parX, y:parY };
+    if(!reduceMotion) requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', ()=>{ resize(); buildBirds(); buildFeathers(); });
+  resize(); buildBirds(); buildFeathers();
+  if(reduceMotion){ draw(); window.addEventListener('scroll', ()=> requestAnimationFrame(draw), {passive:true}); }
+  else requestAnimationFrame(draw);
+
+  /* ---------- click a bird or a feather ---------- */
+  const birdWords = ['together','home','still flying','yours','this way','always'];
+  canvas.addEventListener('click', (e)=>{
+    const par = window.__parallax || {x:0,y:0};
+    const x = e.clientX - par.x, y = e.clientY - par.y;
+    const birdList = window.__birds || [];
+    for(const b of birdList){
+      const d = Math.hypot(x-b.x, y-b.y);
+      if(d < 26*b.scale+14){
+        skyMessage(birdWords[Math.floor(Math.random()*birdWords.length)], e.clientX, e.clientY);
+        if(typeof playChirp === 'function') playChirp();
+        return;
+      }
+    }
+    const featherList = window.__feathers || [];
+    for(const f of featherList){
+      if(!f.text) continue;
+      const d = Math.hypot(x-f.x, y-f.y);
+      if(d < 22){
+        skyMessage(f.text, e.clientX, e.clientY);
+        if(typeof playChirp === 'function') playChirp();
+        return;
+      }
+    }
+  });
+
+  /* ---------- reveal branch + poem lines ---------- */
+  const branches = document.querySelectorAll('.branch');
+  const bio = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('show');
+        bio.unobserve(entry.target);
+      }
+    });
+  }, { threshold:0.3 });
+  branches.forEach(b=> bio.observe(b));
+
+  const cards = document.querySelectorAll('.poem-card');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        entry.target.classList.add('visible');
+        entry.target.querySelectorAll('.pline').forEach((line,i)=>{
+          setTimeout(()=> line.classList.add('show'), reduceMotion?0:i*150);
+        });
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold:0.3 });
+  cards.forEach(c=> io.observe(c));
+
+  const finalVow = document.getElementById('finalVow');
+  const backTop = document.getElementById('backTop');
+  const vio = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){
+        setTimeout(()=> finalVow.classList.add('show'), 800);
+        setTimeout(()=> backTop.classList.add('show'), 1500);
+        if(typeof playFinalChime === 'function') setTimeout(playFinalChime, 700);
+        vio.unobserve(entry.target);
+      }
+    });
+  }, { threshold:0.5 });
+  vio.observe(document.getElementById('v6'));
+
+  /* ===================== AUDIO (optional, off by default) ===================== */
+  const soundBtn = document.getElementById('soundToggle');
+  let audioCtx=null, masterGain=null, playing=false;
+  let windSource=null, windFilter=null, windGain=null;
+  let chirpTimeoutId=null;
+
+  function makeNoiseBuffer(seconds, tone){
+    const bufferSize = audioCtx.sampleRate*seconds;
+    const buffer = audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let last=0;
+    for(let i=0;i<bufferSize;i++){
+      const white=Math.random()*2-1;
+      last=(last+tone*white)/(1+tone*0.98);
+      data[i]=last*3.2;
+    }
+    return buffer;
+  }
+
+  function playChirp(){
+    if(!audioCtx) return;
+    const now = audioCtx.currentTime;
+    const f0 = 2100+Math.random()*700;
+    const osc = audioCtx.createOscillator();
+    osc.type='sine';
+    osc.frequency.setValueAtTime(f0, now);
+    osc.frequency.exponentialRampToValueAtTime(f0*1.4, now+0.09);
+    osc.frequency.exponentialRampToValueAtTime(f0*0.85, now+0.2);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.05, now+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now+0.22);
+    osc.connect(g); g.connect(masterGain);
+    osc.start(now); osc.stop(now+0.24);
+  }
+  function scheduleChirp(){
+    if(!audioCtx || !playing) return;
+    const t = getScrollT();
+    const storm = stormFactor(t);
+    if(storm < 0.4 && Math.random()<0.6) playChirp();
+    chirpTimeoutId = setTimeout(scheduleChirp, 2200+Math.random()*3200);
+  }
+
+  function playFinalChime(){
+    if(!audioCtx) return;
+    const now = audioCtx.currentTime;
+    [523.25,659.25,783.99,987.77].forEach((f,i)=>{
+      const start = now+i*0.16;
+      const osc = audioCtx.createOscillator();
+      osc.type='sine'; osc.frequency.value=f;
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0.0001, start);
+      g.gain.exponentialRampToValueAtTime(0.05, start+0.06);
+      g.gain.exponentialRampToValueAtTime(0.0001, start+2);
+      osc.connect(g); g.connect(masterGain);
+      osc.start(start); osc.stop(start+2.1);
+    });
+  }
+
+  function updateWind(){
+    if(!audioCtx || !playing || !windGain) return;
+    const now = audioCtx.currentTime;
+    const storm = stormFactor(getScrollT());
+    windGain.gain.setTargetAtTime(0.03 + storm*0.09, now, 0.8);
+  }
+  setInterval(updateWind, 400);
+
+  function startAmbience(){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.0001;
+    masterGain.connect(audioCtx.destination);
+
+    windSource = audioCtx.createBufferSource();
+    windSource.buffer = makeNoiseBuffer(4, 0.08);
+    windSource.loop = true;
+    windFilter = audioCtx.createBiquadFilter();
+    windFilter.type='lowpass'; windFilter.frequency.value=700;
+    windGain = audioCtx.createGain(); windGain.gain.value=0.03;
+    windSource.connect(windFilter); windFilter.connect(windGain); windGain.connect(masterGain);
+    windSource.start();
+
+    masterGain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime+1.4);
+    playing = true;
+    chirpTimeoutId = setTimeout(scheduleChirp, 1200);
+  }
+  function stopAmbience(){
+    if(!audioCtx) return;
+    playing = false;
+    clearTimeout(chirpTimeoutId);
+    const now = audioCtx.currentTime;
+    masterGain.gain.linearRampToValueAtTime(0.0001, now+0.6);
+    setTimeout(()=>{ try{ windSource.stop(); }catch(e){} audioCtx.close(); audioCtx=null; }, 700);
+  }
+  soundBtn.addEventListener('click', ()=>{
+    const willPlay = !playing;
+    soundBtn.setAttribute('aria-pressed', String(willPlay));
+    soundBtn.innerHTML = willPlay ? '&#128266;' : '&#128264;';
+    if(willPlay) startAmbience(); else stopAmbience();
+  });
+
+})();
+</script>
+
+</body>
+</html>
